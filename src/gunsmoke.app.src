@@ -9,8 +9,8 @@
     stdlib
    ]},
   {env,
-   [ {server_ip, "localhost"}  % where the client should connect
-   , {listen_ip, "localhost"}  % what the server should listen to
+   [ {server_ip, {127,0,0,1}}  % where the client should connect
+   , {listen_ip, {127,0,0,1}}  % what the server should listen to
    , {port, 8888}
    , {tls_port, 9999}
    , {client_tls_opts,
@@ -22,7 +22,7 @@
       [ {verify, verify_none}
       , {log_level, debug}
       , {versions, ['tlsv1.2']}
-      , {cacert, "/home/tobbe/git/gunsmoke/cert/ca.crt"}
+      , {cacertfile, "/home/tobbe/git/gunsmoke/cert/ca.crt"}
       , {certfile, "/home/tobbe/git/gunsmoke/cert/server.pem"}
       , {keyfile, "/home/tobbe/git/gunsmoke/cert/server.key"}
       ]}

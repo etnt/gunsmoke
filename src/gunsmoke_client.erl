@@ -11,7 +11,7 @@
 
 
 %% gen_server callbacks
--export([ start_clean/0
+-export([ start_tcp/0
         , start_tls/0
         , init/1
         , handle_continue/2
@@ -35,12 +35,12 @@
 %% Starts the server
 %% @end
 %%--------------------------------------------------------------------
--spec start_clean() -> {ok, Pid :: pid()} |
+-spec start_tcp() -> {ok, Pid :: pid()} |
           {error, Error :: {already_started, pid()}} |
           {error, Error :: term()} |
           ignore.
 
-start_clean() ->
+start_tcp() ->
     gen_server:start(?MODULE, #{use_tls => false}, []).
 
 
@@ -76,6 +76,8 @@ handle_continue(start_client, CfgMap) ->
 
 continue(CfgMap) ->
     try
+        ?dbg("client config: ~p~n", [CfgMap]),
+
         {ok, ConnPid} = gun_open(CfgMap),
         {ok, _Protocol} = gun:await_up(ConnPid),
 
@@ -100,8 +102,8 @@ gun_open(#{use_tls := true} = CfgMap) ->
                         , tls_opts => TLS_opts
                         });
 gun_open(#{use_tls := false} = CfgMap) ->
-    IP = maps:get(producer_ip, CfgMap),
-    Port = maps:get(producer_port, CfgMap),
+    IP = maps:get(server_ip, CfgMap),
+    Port = maps:get(port, CfgMap),
     ?dbg("connecting via TCP: IP=~p , Port=~p~n",[IP,Port]),
     gun:open(IP, Port).
 

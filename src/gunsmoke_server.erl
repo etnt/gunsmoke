@@ -78,6 +78,8 @@ handle_continue(start_server, CfgMap) ->
 
 continue(CfgMap) ->
     try
+        ?dbg("server config: ~p~n", [CfgMap]),
+
         Dispatch =
             cowboy_router:compile(
               [
@@ -102,12 +104,14 @@ start_listener(#{use_tls := true} = CfgMap, Dispatch) ->
     Port = maps:get(tls_port, CfgMap),
     TLS_opts = maps:get(server_tls_opts, CfgMap),
 
-    ?dbg("starting HTTPS listener on Port: ~p~n",[Port]),
+    Opts = [ {ip, IP}
+           , {port, Port}
+           ] ++ TLS_opts,
+
+    ?dbg("starting HTTPS listener on Port: ~p , Opts: ~p~n",[Port,Opts]),
     cowboy:start_tls(
       https_listener,
-      [ {ip, IP}
-      , {port, Port}
-      ] ++ TLS_opts,
+      Opts,
       #{env => #{dispatch => Dispatch}}
      );
 %%
@@ -151,7 +155,7 @@ websocket_init(Map) ->
 
 websocket_handle(Frame, State) ->
     ?dbg("server got Frame, echoing back: ~p~n",[Frame]),
-    {Frame, State}.
+    {[Frame], State}.
 
 
 websocket_info(_Info, State) ->
