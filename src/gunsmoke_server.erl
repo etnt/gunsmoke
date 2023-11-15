@@ -112,7 +112,8 @@ start_listener(#{use_tls := true} = CfgMap, Dispatch) ->
     cowboy:start_tls(
       https_listener,
       Opts,
-      #{env => #{dispatch => Dispatch}}
+      #{env => #{dispatch => Dispatch}
+       }
      );
 %%
 start_listener(CfgMap, Dispatch) ->

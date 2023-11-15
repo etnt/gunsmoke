@@ -13,14 +13,25 @@
    , {listen_ip, {127,0,0,1}}  % what the server should listen to
    , {port, 8888}
    , {tls_port, 9999}
+
+     %% Note: when `verify` is set to `verify_peer` the Client code
+     %% will define a `verify_fun` that disable the
+     %% hostname_check if `disable_hostname_check=true`;
+     %% since we are using a self-signed cert, running over local
+     %% host we may not be able to find a proper hostname to
+     %% do this check but we still want to verify the server
+     %% using the `cacertfile`.
+   , {disable_hostname_check, true}
+
    , {client_tls_opts,
-      [ {verify, verify_none}
-      , {log_level, debug}
+      [ {verify, verify_peer}
+      , {log_level, error}       % set to 'debug' for loads of output
       , {versions, ['tlsv1.2']}
+      , {cacertfile, "/home/tobbe/git/gunsmoke/cert/ca.crt"}
       ]}
    , {server_tls_opts,
-      [ {verify, verify_none}
-      , {log_level, debug}
+      [ {verify, verify_peer}
+      , {log_level, error}       % set to 'debug' for loads of output
       , {versions, ['tlsv1.2']}
       , {cacertfile, "/home/tobbe/git/gunsmoke/cert/ca.crt"}
       , {certfile, "/home/tobbe/git/gunsmoke/cert/server.pem"}

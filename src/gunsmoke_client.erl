@@ -98,8 +98,14 @@ gun_open(#{use_tls := true} = CfgMap) ->
     Port = maps:get(tls_port, CfgMap),
     TLS_opts = maps:get(client_tls_opts, CfgMap),
     ?dbg("connecting via TLS: IP=~p , Port=~p~n",[IP,Port]),
-    gun:open(IP, Port, #{transport => tls
-                        , tls_opts => TLS_opts
+    gun:open(IP, Port, #{ transport => tls
+                          %% Note: default protocols are: [http2,http]
+                          %% but `http2` will complicate matters here and
+                          %% is not really needed for our purposes; we just
+                          %% want to bring up the websocket as quickly
+                          %% as possible.
+                        , protocols => [http]
+                        , tls_opts => maybe_add_verify_fun(CfgMap, TLS_opts)
                         });
 gun_open(#{use_tls := false} = CfgMap) ->
     IP = maps:get(server_ip, CfgMap),
@@ -108,11 +114,46 @@ gun_open(#{use_tls := false} = CfgMap) ->
     gun:open(IP, Port).
 
 
+%%
+%% Note: when `verify` is set to `verify_peer` we
+%% will define a `verify_fun` that disable the
+%% hostname_check if `disable_hostname_check=true`;
+%% since we are using a self-signed cert, running over local
+%% host we may not be able to find a proper Hostname to
+%% do this check but we still want to verify the server
+%% using the `cacertfile`.
+%%
+maybe_add_verify_fun(#{disable_hostname_check := true}, TLS_opts) ->
+    case lists:keyfind(verify, 1, TLS_opts) of
+        {verify, verify_peer} ->
+            TLS_opts ++
+                [{verify_fun,
+                  {fun(_,{bad_cert, hostname_check_failed}, UserState) ->
+                           %% Disable this check!
+                           {valid, UserState};
+                      (_,{bad_cert, _} = Reason, _) ->
+                           {fail, Reason};
+                      (_,{extension, _}, UserState) ->
+                           {unknown, UserState};
+                      (_, valid, UserState) ->
+                           {valid, UserState};
+                      (_, valid_peer, UserState) ->
+                           {valid, UserState}
+                   end, []}}];
+        _ ->
+            TLS_opts
+    end;
+%%
+maybe_add_verify_fun(_CfgMap, TLS_opts) ->
+    TLS_opts.
+
+
+
 get_client_config(CfgMap) ->
     gunsmoke_app:get_config(client_config(), CfgMap).
 
 client_config() ->
-    [server_ip, port, tls_port, client_tls_opts].
+    [server_ip, port, tls_port, client_tls_opts, disable_hostname_check].
 
 %%--------------------------------------------------------------------
 %% @private
