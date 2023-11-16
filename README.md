@@ -6,26 +6,63 @@
 
 It can run over either TCP or TLS.
 
-For our TLS server we will use a self-signed cert that we
-can create like this:
+For our TLS server we will use self-signed certs,
+for both the server and the clients.
+
+
+## Installation
+
+You will need [rebar3](https://rebar3.org) to build.
+
+Run: `make`
+
+This will get all dependencies and compile the project.
+
+
+## Setup the certificates
+
+We are using the [myca](https://github.com/etnt/myca)
+CA (Certification Authority) framework to create our
+certificates.
+
+To create a server and client certificate do:
 
 ```shell
-$ cd cert
-$ make
+$ cd CA
+$ make all
+$ make client
 ```
 
 You will be prompted for some info that is used in the
-making of the certs and keys.
+making of the certs and keys. The CA- and Server certificates
+are located under the `CA/certs` directory and the
+client certificates are found under the `CA/client_keys`
+directory. It should look something like this:
+
+``` shell
+❯ ls CA/certs/
+01.pem  02.pem  cacert.pem  server.crt  server.key  server.pem
+
+❯ ls CA/client_keys/
+green@kruskakli.com_Fri-Nov-17-08:16:52-UTC-2023.pem
+```
 
 Then you need to update the location of your cert files
 in the `src/gunsmoke.app.src` file:
 
 ```erlang
-%% Change the paths accordingly (wherever used)!    
-, {cacertfile, "/home/tobbe/git/gunsmoke/cert/ca.crt"}
-, {certfile, "/home/tobbe/git/gunsmoke/cert/server.pem"}
-, {keyfile, "/home/tobbe/git/gunsmoke/cert/server.key"}
+%% Change the paths accordingly.
+...
+, {cacertfile, "/home/tobbe/git/gunsmoke/CA/certs/cacert.pem"}
+, {certfile, "/home/tobbe/git/gunsmoke/CA/client_keys/green@kruskakli.com_Fri-Nov-17-08:16:52-UTC-2023.pem"}
+...
+, {cacertfile, "/home/tobbe/git/gunsmoke/CA/certs/cacert.pem"}
+, {certfile, "/home/tobbe/git/gunsmoke/CA/certs/server.crt"}
+, {keyfile, "/home/tobbe/git/gunsmoke/CA/certs/server.key"}
+...
 ```
+
+## Run the example
 
 We are now ready to run the example.
 Use two shells, one from where we will run the Client and
@@ -34,14 +71,14 @@ another where we will run the Server.
 Start the Server as:
 
 ```
-$ rebar3 shell --sname server --apps ssl,ranch,cowboy
+$ make server
 1> application:load(gunsmoke).
 ```
 
 Start the Client as:
 
 ```
-$ rebar3 shell --sname client --apps ssl,gun
+$ make client
 1> application:load(gunsmoke).
 ```
 

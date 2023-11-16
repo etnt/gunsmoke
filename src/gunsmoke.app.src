@@ -20,8 +20,8 @@
         %% Note: when `verify` is set to `verify_peer`, we want to
         %% disable the Hostname check.
       , {server_name_indication, disable}
-      , {cacertfile, "/home/tobbe/git/gunsmoke/cert/ca.crt"}
-      , {certfile, "/home/tobbe/git/gunsmoke/cert/client.pem"}
+      , {cacertfile, "/home/tobbe/git/gunsmoke/CA/certs/cacert.pem"}
+      , {certfile, "/home/tobbe/git/gunsmoke/CA/client_keys/green@kruskakli.com_Fri-Nov-17-08:16:52-UTC-2023.pem"}
       ]}
    , {server_tls_opts,
       [ {verify, verify_peer}
@@ -34,9 +34,13 @@
       , {fail_if_no_peer_cert, true}
       , {log_level, info}       % set to 'debug' for loads of output
       , {versions, ['tlsv1.2']}
-      , {cacertfile, "/home/tobbe/git/gunsmoke/cert/ca.crt"}
-      , {certfile, "/home/tobbe/git/gunsmoke/cert/server.pem"}
-      , {keyfile, "/home/tobbe/git/gunsmoke/cert/server.key"}
+      , {cacertfile, "/home/tobbe/git/gunsmoke/CA/certs/cacert.pem"}
+      , {certfile, "/home/tobbe/git/gunsmoke/CA/certs/server.crt"}
+      , {keyfile, "/home/tobbe/git/gunsmoke/CA/certs/server.key"}
+        %% Perform CRL (Certificate Revocation List) verification
+        %% on the peer certificate.
+      , {crl_check, peer}
+      , {crl_cache, {ssl_crl_hash_dir, {internal, [{dir, "/home/tobbe/git/gunsmoke/CA/crl"}]}}}
       ]}
    ]},
   {modules, []},
