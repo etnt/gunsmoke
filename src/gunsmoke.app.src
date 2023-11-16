@@ -15,16 +15,24 @@
    , {tls_port, 9999}
    , {client_tls_opts,
       [ {verify, verify_peer}
-      , {log_level, error}       % set to 'debug' for loads of output
+      , {log_level, info}       % set to 'debug' for loads of output
       , {versions, ['tlsv1.2']}
         %% Note: when `verify` is set to `verify_peer`, we want to
         %% disable the Hostname check.
       , {server_name_indication, disable}
       , {cacertfile, "/home/tobbe/git/gunsmoke/cert/ca.crt"}
+      , {certfile, "/home/tobbe/git/gunsmoke/cert/client.pem"}
       ]}
    , {server_tls_opts,
       [ {verify, verify_peer}
-      , {log_level, error}       % set to 'debug' for loads of output
+        %% Used together with 'verify_peer}'. If set to true,
+        %% the server fails if the client does not have a certificate
+        %% to send, that is, sends an empty certificate. If set to
+        %% false, it fails only if the client sends an invalid
+        %% certificate (an empty certificate is considered valid).
+        %% Defaults to false.
+      , {fail_if_no_peer_cert, true}
+      , {log_level, info}       % set to 'debug' for loads of output
       , {versions, ['tlsv1.2']}
       , {cacertfile, "/home/tobbe/git/gunsmoke/cert/ca.crt"}
       , {certfile, "/home/tobbe/git/gunsmoke/cert/server.pem"}
