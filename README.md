@@ -72,14 +72,12 @@ Start the Server as:
 
 ```
 $ make server
-1> application:load(gunsmoke).
 ```
 
 Start the Client as:
 
 ```
 $ make client
-1> application:load(gunsmoke).
 ```
 
 First we can run the example just using TCP.
@@ -136,6 +134,7 @@ In the Client shell, connect to the TLS server as:
 
 
 ```erlang
+2> gunsmoke_client:start_tls().
 gunsmoke_client79: client config: #{client_tls_opts =>
                                      [{verify,verify_peer},
                                       {log_level,error},
