@@ -56,10 +56,11 @@ in the `src/gunsmoke.app.src` file:
 , {cacertfile, "/home/tobbe/git/gunsmoke/CA/certs/cacert.pem"}
 , {certfile, "/home/tobbe/git/gunsmoke/CA/client_keys/green@kruskakli.com_Fri-Nov-17-08:16:52-UTC-2023.pem"}
 ...
-, {cacertfile, "/home/tobbe/git/gunsmoke/CA/certs/cacert.pem"}
+, {cacertfile, "/home/tobbe/git/gunsmoke/CA/certs/ca.crt"}
 , {certfile, "/home/tobbe/git/gunsmoke/CA/certs/server.crt"}
 , {keyfile, "/home/tobbe/git/gunsmoke/CA/certs/server.key"}
 ...
+, {crl_cache, {ssl_crl_hash_dir, {internal, [{dir, "/home/tobbe/git/gunsmoke/CA/crl"}]}}}
 ```
 
 ## Run the example

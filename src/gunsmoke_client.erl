@@ -9,22 +9,15 @@
 
 -behaviour(gen_server).
 
-
 %% gen_server callbacks
--export([ start_tcp/0
-        , start_tls/0
-        , init/1
-        , handle_continue/2
-        , handle_call/3
-        , handle_info/2
-        , handle_cast/2
-        , format_status/2
-        , terminate/2
-        , code_change/3
-        ]).
+-export([start_tcp/0, start_tls/0, init/1, handle_continue/2, handle_call/3,
+         handle_info/2, handle_cast/2, format_status/1, terminate/2, code_change/3]).
 
--define(dbg(FmtStr, Args), io:format("~p~p: "++FmtStr,[?MODULE,?LINE|Args])).
+-callback format_status(Status) -> NewStatus
+    when Status :: gen_event:format_status(),
+         NewStatus :: gen_event:format_status().
 
+-define(dbg(FmtStr, Args), io:format("~p~p: " ++ FmtStr, [?MODULE, ?LINE | Args])).
 
 %%%===================================================================
 %%% API
@@ -35,20 +28,19 @@
 %% Starts the server
 %% @end
 %%--------------------------------------------------------------------
--spec start_tcp() -> {ok, Pid :: pid()} |
-          {error, Error :: {already_started, pid()}} |
-          {error, Error :: term()} |
-          ignore.
-
+-spec start_tcp() ->
+                   {ok, Pid :: pid()} |
+                   {error, Error :: {already_started, pid()}} |
+                   {error, Error :: term()} |
+                   ignore.
 start_tcp() ->
     gen_server:start(?MODULE, #{use_tls => false}, []).
 
-
--spec start_tls() -> {ok, Pid :: pid()} |
-          {error, Error :: {already_started, pid()}} |
-          {error, Error :: term()} |
-          ignore.
-
+-spec start_tls() ->
+                   {ok, Pid :: pid()} |
+                   {error, Error :: {already_started, pid()}} |
+                   {error, Error :: term()} |
+                   ignore.
 start_tls() ->
     gen_server:start(?MODULE, #{use_tls => true}, []).
 
@@ -62,11 +54,12 @@ start_tls() ->
 %% Initializes the server
 %% @end
 %%--------------------------------------------------------------------
--spec init(Args :: term()) -> {ok, State :: term()} |
-          {ok, State :: term(), Timeout :: timeout()} |
-          {ok, State :: term(), hibernate} |
-          {stop, Reason :: term()} |
-          ignore.
+-spec init(Args :: term()) ->
+              {ok, State :: term()} |
+              {ok, State :: term(), Timeout :: timeout()} |
+              {ok, State :: term(), hibernate} |
+              {stop, Reason :: term()} |
+              ignore.
 init(CfgMap) ->
     process_flag(trap_exit, true),
     {ok, CfgMap, {continue, start_client}}.
@@ -85,35 +78,32 @@ continue(CfgMap) ->
 
         %% Now, wait for the gun_upgrade message to arrive in handle_info/2.
         {noreply, CfgMap}
-
     catch
         _Etype:_Err:_Estack ->
-            ?dbg("<ERROR> ~p~n",[{_Etype,_Err,_Estack}]),
+            ?dbg("<ERROR> ~p~n", [{_Etype, _Err, _Estack}]),
             {noreply, CfgMap}
     end.
-
 
 gun_open(#{use_tls := true} = CfgMap) ->
     IP = maps:get(server_ip, CfgMap),
     Port = maps:get(tls_port, CfgMap),
     TLS_opts = maps:get(client_tls_opts, CfgMap),
-    ?dbg("connecting via TLS: IP=~p , Port=~p~n",[IP,Port]),
-    gun:open(IP, Port, #{ transport => tls
-                          %% Note: default protocols are: [http2,http]
-                          %% but `http2` will complicate matters here and
-                          %% is not really needed for our purposes; we just
-                          %% want to bring up the websocket as quickly
-                          %% as possible.
-                        , protocols => [http]
-                        , tls_opts => TLS_opts
-                        });
+    ?dbg("connecting via TLS: IP=~p , Port=~p~n", [IP, Port]),
+    gun:open(IP,
+             Port,
+             #{transport => tls,
+               %% Note: default protocols are: [http2,http]
+               %% but `http2` will complicate matters here and
+               %% is not really needed for our purposes; we just
+               %% want to bring up the websocket as quickly
+               %% as possible.
+               protocols => [http],
+               tls_opts => TLS_opts});
 gun_open(#{use_tls := false} = CfgMap) ->
     IP = maps:get(server_ip, CfgMap),
     Port = maps:get(port, CfgMap),
-    ?dbg("connecting via TCP: IP=~p , Port=~p~n",[IP,Port]),
+    ?dbg("connecting via TCP: IP=~p , Port=~p~n", [IP, Port]),
     gun:open(IP, Port).
-
-
 
 get_client_config(CfgMap) ->
     gunsmoke_app:get_config(client_config(), CfgMap).
@@ -128,14 +118,14 @@ client_config() ->
 %% @end
 %%--------------------------------------------------------------------
 -spec handle_call(Request :: term(), From :: {pid(), term()}, State :: term()) ->
-          {reply, Reply :: term(), NewState :: term()} |
-          {reply, Reply :: term(), NewState :: term(), Timeout :: timeout()} |
-          {reply, Reply :: term(), NewState :: term(), hibernate} |
-          {noreply, NewState :: term()} |
-          {noreply, NewState :: term(), Timeout :: timeout()} |
-          {noreply, NewState :: term(), hibernate} |
-          {stop, Reason :: term(), Reply :: term(), NewState :: term()} |
-          {stop, Reason :: term(), NewState :: term()}.
+                     {reply, Reply :: term(), NewState :: term()} |
+                     {reply, Reply :: term(), NewState :: term(), Timeout :: timeout()} |
+                     {reply, Reply :: term(), NewState :: term(), hibernate} |
+                     {noreply, NewState :: term()} |
+                     {noreply, NewState :: term(), Timeout :: timeout()} |
+                     {noreply, NewState :: term(), hibernate} |
+                     {stop, Reason :: term(), Reply :: term(), NewState :: term()} |
+                     {stop, Reason :: term(), NewState :: term()}.
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -147,10 +137,10 @@ handle_call(_Request, _From, State) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec handle_cast(Request :: term(), State :: term()) ->
-          {noreply, NewState :: term()} |
-          {noreply, NewState :: term(), Timeout :: timeout()} |
-          {noreply, NewState :: term(), hibernate} |
-          {stop, Reason :: term(), NewState :: term()}.
+                     {noreply, NewState :: term()} |
+                     {noreply, NewState :: term(), Timeout :: timeout()} |
+                     {noreply, NewState :: term(), hibernate} |
+                     {stop, Reason :: term(), NewState :: term()}.
 handle_cast(_Request, State) ->
     {noreply, State}.
 
@@ -161,19 +151,17 @@ handle_cast(_Request, State) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec handle_info(Info :: timeout() | term(), State :: term()) ->
-          {noreply, NewState :: term()} |
-          {noreply, NewState :: term(), Timeout :: timeout()} |
-          {noreply, NewState :: term(), hibernate} |
-          {stop, Reason :: normal | term(), NewState :: term()}.
-
-handle_info({gun_upgrade, ConnPid, StreamRef, [<<"websocket">>], _Headers},
-            State) ->
-    ?dbg("client got: gun_upgrade , sending Hello!~n",[]),
+                     {noreply, NewState :: term()} |
+                     {noreply, NewState :: term(), Timeout :: timeout()} |
+                     {noreply, NewState :: term(), hibernate} |
+                     {stop, Reason :: normal | term(), NewState :: term()}.
+handle_info({gun_upgrade, ConnPid, StreamRef, [<<"websocket">>], _Headers}, State) ->
+    ?dbg("client got: gun_upgrade , sending Hello!~n", []),
     gun:ws_send(ConnPid, StreamRef, {text, "Hello from CLient!"}),
     {noreply, State};
 %%
 handle_info(_Info, State) ->
-    ?dbg("handle_info, client got: ~p~n",[_Info]),
+    ?dbg("handle_info, client got: ~p~n", [_Info]),
     {noreply, State}.
 
 %%--------------------------------------------------------------------
@@ -186,7 +174,8 @@ handle_info(_Info, State) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec terminate(Reason :: normal | shutdown | {shutdown, term()} | term(),
-                State :: term()) -> any().
+                State :: term()) ->
+                   any().
 terminate(_Reason, _State) ->
     ok.
 
@@ -196,10 +185,8 @@ terminate(_Reason, _State) ->
 %% Convert process state when code is changed
 %% @end
 %%--------------------------------------------------------------------
--spec code_change(OldVsn :: term() | {down, term()},
-                  State :: term(),
-                  Extra :: term()) -> {ok, NewState :: term()} |
-          {error, Reason :: term()}.
+-spec code_change(OldVsn :: term() | {down, term()}, State :: term(), Extra :: term()) ->
+                     {ok, NewState :: term()} | {error, Reason :: term()}.
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
@@ -211,9 +198,8 @@ code_change(_OldVsn, State, _Extra) ->
 %% or when it appears in termination error logs.
 %% @end
 %%--------------------------------------------------------------------
--spec format_status(Opt :: normal | terminate,
-                    Status :: list()) -> Status :: term().
-format_status(_Opt, Status) ->
+
+format_status(Status) ->
     Status.
 
 %%%===================================================================
